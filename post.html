@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>文章详情 - Xiao Wang</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="blog.css">
+</head>
+<body>
+  <div class="page-title">Xiao Wang</div>
+  <div class="section-title" id="article-title"></div>
+  <article id="article-content" class="article-content"></article>
+  <nav>
+    <div class="links">
+      <a href="/" target="_blank">Home</a>
+      <a href="blog.html" target="_blank">Blog</a>
+    </div>
+  </nav>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    async function loadArticle() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const slug = urlParams.get('slug');
+      
+      if (!slug) {
+        document.getElementById('article-title').textContent = '文章不存在';
+        return;
+      }
+
+      try {
+        const res = await fetch(`posts/${slug}.md`);
+        const text = await res.text();
+        const { meta, content } = parseFrontMatter(text);
+        
+        document.title = `${meta.title} - Xiao Wang`;
+        document.getElementById('article-title').textContent = meta.title;
+        document.getElementById('article-content').innerHTML = 
+          marked.parse(content.replace(/^---[\s\S]*?---/, ''));
+      } catch (err) {
+        console.error('加载文章失败:', err);
+        document.getElementById('article-title').textContent = '加载失败';
+      }
+    }
+
+    // 复用blog.html中的解析函数
+    function parseFrontMatter(content) {
+      const meta = {};
+      content.replace(/^---\s*([\s\S]*?)\s*---/, (m, g1) => {
+        g1.split('\n').forEach(line => {
+          const [key, value] = line.split(':').map(s => s.trim());
+          if(key && value) meta[key] = value;
+        });
+        return '';
+      });
+      return { meta, content: content.replace(/^---[\s\S]*?---\s*/,'') };
+    }
+
+    loadArticle();
+  </script>
+</body>
+</html>

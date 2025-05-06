@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Blog - Xiao Wang</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="blog.css">
+</head>
+<body>
+  <div class="page-title">Xiao Wang</div>
+  <div class="section-title">文章列表</div>
+  <section class="article-list">
+    <div id="article-list" class="article-list">
+      <!-- 文章列表将由JavaScript动态生成 -->
+    </div>
+  </section>
+  <nav>
+    <div class="links">
+      <a href="/" target="_blank">Home</a>
+      <a href="mailto:wang@1word.asia" target="_blank">Email</a>
+    </div>
+  </nav>
+  <script>
+    // 解析Front Matter的函数
+    function parseFrontMatter(content) {
+      const meta = {};
+      content.replace(/^---\s*([\s\S]*?)\s*---/, (m, g1) => {
+        g1.split('\n').forEach(line => {
+          const [key, value] = line.split(':').map(s => s.trim());
+          if(key && value) meta[key] = value;
+        });
+        return '';
+      });
+      return { meta, content: content.replace(/^---[\s\S]*?---\s*/,'') };
+    }
+
+    // 生成文章卡片
+    function createArticleCard({title, date, slug, excerpt}) {
+      return `
+        <article class="article-card">
+          <div class="article-meta">
+            <time class="article-date">${date}</time>
+          </div>
+          <h2 class="article-title">
+            <a href="post.html?slug=${slug}">${title}</a>
+          </h2>
+          <p class="article-excerpt">${excerpt}</p>
+        </article>
+      `;
+    }
+
+    // 加载并渲染文章
+    async function loadArticles() {
+      try {
+        const res = await fetch('posts/list.json');
+        const files = await res.json();
+        
+        const articles = await Promise.all(
+          files.map(async file => {
+            const res = await fetch(`posts/${file}`);
+            const text = await res.text();
+            const {meta, content} = parseFrontMatter(text);
+            return {
+              ...meta,
+              excerpt: content.split('\n').find(line => line.trim()) || ''
+            };
+          })
+        );
+
+        articles.sort((a, b) => new Date(b.date) - new Date(a.date));
+        document.getElementById('article-list').innerHTML = articles.map(createArticleCard).join('');
+      } catch (err) {
+        console.error('加载文章失败:', err);
+      }
+    }
+
+    loadArticles();
+  </script>
+</body>
+</html>
