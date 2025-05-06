@@ -29,7 +29,7 @@
       }
 
       try {
-        const res = await fetch(`posts/${slug}.md`);
+        const res = await fetch(`posts/${slug}`);
         const text = await res.text();
         const { meta, content } = parseFrontMatter(text);
         
